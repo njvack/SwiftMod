@@ -1,0 +1,52 @@
+public enum Effect: Sendable, Equatable {
+    // --- Common (MOD/S3M/XM/IT) ---
+    case arpeggio(x: Int, y: Int)
+    case slideUp(speed: Int)
+    case slideDown(speed: Int)
+    case tonePortamento(speed: Int)
+    case vibrato(speed: Int, depth: Int)
+    case tonePortamentoVolumeSlide(upDown: Int)
+    case vibratoVolumeSlide(upDown: Int)
+    case tremolo(speed: Int, depth: Int)
+    case setPanning(value: Int)
+    case sampleOffset(offset: Int)
+    case volumeSlide(upDown: Int)
+    case positionJump(order: Int)
+    case setVolume(volume: Int)
+    case patternBreak(row: Int)
+    case setSpeed(speed: Int)
+    case setTempo(bpm: Int)
+
+    // --- Extended effects (MOD Exy) ---
+    case setFilter(on: Bool)
+    case fineSlideUp(amount: Int)
+    case fineSlideDown(amount: Int)
+    case glissandoControl(on: Bool)
+    case setVibratoWaveform(waveform: Int)
+    case setFinetune(value: Int)
+    case patternLoop(count: Int)
+    case setTremoloWaveform(waveform: Int)
+    case retrigNote(interval: Int)
+    case fineVolumeSlideUp(amount: Int)
+    case fineVolumeSlideDown(amount: Int)
+    case noteCut(tick: Int)
+    case noteDelay(tick: Int)
+    case patternDelay(rows: Int)
+
+    // --- S3M/XM/IT additions ---
+    case setGlobalVolume(volume: Int)
+    case globalVolumeSlide(upDown: Int)
+    case panningSlide(upDown: Int)
+    case retrigVolumeSlide(interval: Int, type: Int)
+    case tremor(onOff: Int)
+    case setChannelVolume(volume: Int)
+    case channelVolumeSlide(upDown: Int)
+    case extraFinePortaUp(amount: Int)
+    case extraFinePortaDown(amount: Int)
+    case panbrello(speed: Int, depth: Int)
+    case setEnvelopePosition(tick: Int)
+
+    // --- IT-specific ---
+    case setFilterCutoff(value: Int)
+    case setFilterResonance(value: Int)
+}
