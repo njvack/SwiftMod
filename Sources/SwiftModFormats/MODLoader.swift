@@ -94,7 +94,7 @@ public struct MODLoader: FormatLoader {
             for _ in 0..<64 {
                 var row: [Note] = []
                 for _ in 0..<channelCount {
-                    let noteData = try reader.readBytes(4)
+                    let noteData = try reader.readUInt8x4()
                     let note = decodeNote(noteData)
                     row.append(note)
                 }
@@ -181,11 +181,8 @@ public struct MODLoader: FormatLoader {
 
     // MARK: - Note Decoding
 
-    private static func decodeNote(_ data: Data) -> Note {
-        let b0 = data[data.startIndex]
-        let b1 = data[data.startIndex + 1]
-        let b2 = data[data.startIndex + 2]
-        let b3 = data[data.startIndex + 3]
+    private static func decodeNote(_ data: (UInt8, UInt8, UInt8, UInt8)) -> Note {
+        let (b0, b1, b2, b3) = data
 
         // Sample number: upper 4 bits of byte 0 + upper 4 bits of byte 2
         let sampleNum = Int(b0 & 0xF0) | Int(b2 >> 4)

@@ -44,6 +44,17 @@ struct BinaryReader {
         return result
     }
 
+    mutating func readUInt8x4() throws -> (UInt8, UInt8, UInt8, UInt8) {
+        guard offset + 4 <= data.count else { throw BinaryReaderError.endOfData }
+        let result = data.withUnsafeBytes { buffer in
+            let p = buffer.baseAddress!.advanced(by: offset)
+                .assumingMemoryBound(to: UInt8.self)
+            return (p[0], p[1], p[2], p[3])
+        }
+        offset += 4
+        return result
+    }
+
     mutating func readASCII(_ count: Int) throws -> String {
         let bytes = try readBytes(count)
         // Strip trailing nulls and non-printable characters
@@ -54,9 +65,12 @@ struct BinaryReader {
 
     mutating func readInt8Array(_ count: Int) throws -> [Int8] {
         guard offset + count <= data.count else { throw BinaryReaderError.endOfData }
-        var result = [Int8](repeating: 0, count: count)
-        for i in 0..<count {
-            result[i] = Int8(bitPattern: data[offset + i])
+        let result = data.withUnsafeBytes { buffer in
+            Array(UnsafeBufferPointer(
+                start: buffer.baseAddress!.advanced(by: offset)
+                    .assumingMemoryBound(to: Int8.self),
+                count: count
+            ))
         }
         offset += count
         return result
