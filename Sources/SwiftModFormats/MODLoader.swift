@@ -202,11 +202,16 @@ public struct MODLoader: FormatLoader {
         let instrument = sampleNum > 0 ? sampleNum : nil
         let effect = decodeEffect(command: effectCmd, param: effectParam)
 
+        let rawEff: UInt8? = (effectCmd != 0 || effectParam != 0) ? UInt8(effectCmd) : nil
+        let rawParam: UInt8? = (effectCmd != 0 || effectParam != 0) ? UInt8(effectParam) : nil
+
         return Note(
             noteValue: noteValue,
             period: storePeriod,
             instrument: instrument,
-            effect: effect
+            effect: effect,
+            rawEffect: rawEff,
+            rawEffectParam: rawParam
         )
     }
 

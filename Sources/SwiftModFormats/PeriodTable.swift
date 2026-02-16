@@ -2,7 +2,7 @@ import SwiftModCore
 
 // Standard ProTracker period table: 16 finetune values x 36 notes (3 octaves)
 // Finetune 0 is at index 0, finetune 1 at index 1, ..., finetune -1 (=15) at index 15
-let periodTable: [[Int]] = [
+public let periodTable: [[Int]] = [
     // Finetune 0
     [856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
      428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226,

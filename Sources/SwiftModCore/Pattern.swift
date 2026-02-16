@@ -15,6 +15,8 @@ public struct Note: Sendable {
     public let volume: Int?
     public let volumeEffect: VolumeEffect?
     public let effect: Effect?
+    public let rawEffect: UInt8?
+    public let rawEffectParam: UInt8?
 
     public init(
         noteValue: NoteValue? = nil,
@@ -22,7 +24,9 @@ public struct Note: Sendable {
         instrument: Int? = nil,
         volume: Int? = nil,
         volumeEffect: VolumeEffect? = nil,
-        effect: Effect? = nil
+        effect: Effect? = nil,
+        rawEffect: UInt8? = nil,
+        rawEffectParam: UInt8? = nil
     ) {
         self.noteValue = noteValue
         self.period = period
@@ -30,6 +34,8 @@ public struct Note: Sendable {
         self.volume = volume
         self.volumeEffect = volumeEffect
         self.effect = effect
+        self.rawEffect = rawEffect
+        self.rawEffectParam = rawEffectParam
     }
 }
 
