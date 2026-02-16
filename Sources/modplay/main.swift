@@ -14,25 +14,19 @@ nonisolated func startAudio(renderer: ModuleRenderer, sampleRate: Double) throws
         interleaved: false
     )!
 
-    // Pre-allocate interleaved render buffer (max 4096 frames should cover any callback size)
-    let maxFrames = 4096
-    let renderBuffer = UnsafeMutableBufferPointer<Float>.allocate(capacity: maxFrames * 2)
-
     let sourceNode = AVAudioSourceNode(format: renderFormat) { _, _, frameCount, audioBufferList -> OSStatus in
         let count = Int(frameCount)
         let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
 
-        // Render interleaved into pre-allocated buffer
-        let buf = UnsafeMutableBufferPointer(start: renderBuffer.baseAddress!, count: count * 2)
-        renderer.render(into: buf, frameCount: count)
-
-        // Deinterleave into the non-interleaved output buffers
-        let leftData = ablPointer[0].mData!.assumingMemoryBound(to: Float.self)
-        let rightData = ablPointer[1].mData!.assumingMemoryBound(to: Float.self)
-        for i in 0..<count {
-            leftData[i] = buf[i &* 2]
-            rightData[i] = buf[i &* 2 &+ 1]
-        }
+        let left = UnsafeMutableBufferPointer(
+            start: ablPointer[0].mData!.assumingMemoryBound(to: Float.self),
+            count: count
+        )
+        let right = UnsafeMutableBufferPointer(
+            start: ablPointer[1].mData!.assumingMemoryBound(to: Float.self),
+            count: count
+        )
+        renderer.render(left: left, right: right, frameCount: count)
 
         return noErr
     }

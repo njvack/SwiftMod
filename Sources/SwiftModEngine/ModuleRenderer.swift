@@ -1,3 +1,4 @@
+import Foundation
 import SwiftModCore
 
 public class ModuleRenderer: @unchecked Sendable {
@@ -17,20 +18,27 @@ public class ModuleRenderer: @unchecked Sendable {
         self.module = module
         self.sequencer = BaseSequencer(module: module, sampleRate: sampleRate)
         self.mixer = LinearMixer(sampleRate: sampleRate)
+        self.mixer.prepare(module: module)
     }
 
     public init(sequencer: BaseSequencer, module: Module, sampleRate: Int = 44100) {
         self.module = module
         self.sequencer = sequencer
         self.mixer = LinearMixer(sampleRate: sampleRate)
+        self.mixer.prepare(module: module)
     }
 
-    /// Render stereo interleaved Float audio into the buffer.
+    /// Render stereo audio into separate left/right buffers.
     /// Called from the audio render callback.
-    public func render(into buffer: UnsafeMutableBufferPointer<Float>, frameCount: Int) {
+    public func render(
+        left: UnsafeMutableBufferPointer<Float>,
+        right: UnsafeMutableBufferPointer<Float>,
+        frameCount: Int
+    ) {
         guard !sequencer.isFinished else {
             // Zero and return
-            for i in 0..<(frameCount * 2) { buffer[i] = 0.0 }
+            memset(left.baseAddress!, 0, frameCount * MemoryLayout<Float>.size)
+            memset(right.baseAddress!, 0, frameCount * MemoryLayout<Float>.size)
             return
         }
 
@@ -41,16 +49,19 @@ public class ModuleRenderer: @unchecked Sendable {
             let framesToRender = min(framesUntilTick, frameCount - framesRendered)
 
             if framesToRender > 0 {
-                let offset = framesRendered * 2
-                let sliceBuffer = UnsafeMutableBufferPointer(
-                    start: buffer.baseAddress! + offset,
-                    count: framesToRender * 2
+                let leftSlice = UnsafeMutableBufferPointer(
+                    start: left.baseAddress! + framesRendered,
+                    count: framesToRender
+                )
+                let rightSlice = UnsafeMutableBufferPointer(
+                    start: right.baseAddress! + framesRendered,
+                    count: framesToRender
                 )
                 mixer.render(
                     channels: &sequencer.channels,
-                    module: module,
                     frameCount: framesToRender,
-                    into: sliceBuffer
+                    left: leftSlice,
+                    right: rightSlice
                 )
 
                 framesRendered += framesToRender
@@ -65,9 +76,9 @@ public class ModuleRenderer: @unchecked Sendable {
 
         // Zero any remaining frames if sequencer finished mid-buffer
         if framesRendered < frameCount {
-            for i in (framesRendered * 2)..<(frameCount * 2) {
-                buffer[i] = 0.0
-            }
+            let remaining = frameCount - framesRendered
+            memset(left.baseAddress! + framesRendered, 0, remaining * MemoryLayout<Float>.size)
+            memset(right.baseAddress! + framesRendered, 0, remaining * MemoryLayout<Float>.size)
         }
     }
 }

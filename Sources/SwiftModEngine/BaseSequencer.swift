@@ -262,12 +262,12 @@ public class BaseSequencer: @unchecked Sendable {
 
         case .fineSlideUp(let amount):
             if amount > 0 {
-                channels[ch].period = max(channels[ch].period - amount, 113)
+                channels[ch].period = max(channels[ch].period - amount, minPeriod)
             }
 
         case .fineSlideDown(let amount):
             if amount > 0 {
-                channels[ch].period = min(channels[ch].period + amount, 856)
+                channels[ch].period = min(channels[ch].period + amount, maxPeriod)
             }
 
         case .fineVolumeSlideUp(let amount):
@@ -334,10 +334,10 @@ public class BaseSequencer: @unchecked Sendable {
     func processTickNEffect(_ effect: Effect, channel ch: Int) {
         switch effect {
         case .slideUp:
-            channels[ch].period = max(channels[ch].period - channels[ch].slideUpSpeed, 113)
+            channels[ch].period = max(channels[ch].period - channels[ch].slideUpSpeed, minPeriod)
 
         case .slideDown:
-            channels[ch].period = min(channels[ch].period + channels[ch].slideDownSpeed, 856)
+            channels[ch].period = min(channels[ch].period + channels[ch].slideDownSpeed, maxPeriod)
 
         case .tonePortamento:
             doTonePortamento(channel: ch)
@@ -488,7 +488,7 @@ public class BaseSequencer: @unchecked Sendable {
     private func periodForSemitoneOffset(basePeriod: Int, semitones: Int) -> Int {
         guard semitones > 0 else { return basePeriod }
         let factor = pow(2.0, -Double(semitones) / 12.0)
-        return max(Int(Double(basePeriod) * factor), 113)
+        return max(Int(Double(basePeriod) * factor), minPeriod)
     }
 
     private func clampVolume(_ v: Int) -> Int {

@@ -1,3 +1,4 @@
+import SwiftModCore
 import SwiftModFormats
 
 enum KeyboardMapper {

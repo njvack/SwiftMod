@@ -3,12 +3,16 @@ import SwiftModCore
 public protocol Mixer {
     var sampleRate: Int { get }
 
-    /// Render `frameCount` stereo interleaved Float frames into the buffer,
+    /// Pre-process sample data into whatever format the mixer needs for
+    /// efficient rendering. Called once at setup time.
+    mutating func prepare(module: Module)
+
+    /// Render `frameCount` stereo frames into separate left/right buffers,
     /// using current channel states from the sequencer.
     mutating func render(
         channels: inout [ChannelState],
-        module: Module,
         frameCount: Int,
-        into buffer: UnsafeMutableBufferPointer<Float>
+        left: UnsafeMutableBufferPointer<Float>,
+        right: UnsafeMutableBufferPointer<Float>
     )
 }
