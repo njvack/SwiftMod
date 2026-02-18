@@ -15,6 +15,16 @@ public class ModuleRenderer: @unchecked Sendable {
     public var samplesPerTick: Int { sequencer.samplesPerTick }
     public let module: Module
 
+    public var onRow: ((Int, Int) -> Void)? {
+        get { sequencer.onRow }
+        set { sequencer.onRow = newValue }
+    }
+
+    public func seek(toOrder targetOrder: Int, row targetRow: Int = 0) {
+        sequencer.seek(toOrder: targetOrder, row: targetRow)
+        sampleCounter = 0
+    }
+
     public init(module: Module, sampleRate: Int = 44100) {
         self.module = module
         self.sequencer = BaseSequencer(module: module, sampleRate: sampleRate)

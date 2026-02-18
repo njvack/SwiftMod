@@ -1,25 +1,9 @@
 import Foundation
 import SwiftModCore
 import SwiftModFormats
+import ModCLI
 
 let noteNames = ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"]
-
-func printUsage() {
-    print("Usage: modpattern <file.mod> [order_start[:order_end]] [row_start[:row_end]]")
-    print()
-    print("Examples:")
-    print("  modpattern foo.mod          All orders, all rows")
-    print("  modpattern foo.mod 3        Order 3 only")
-    print("  modpattern foo.mod 0:5      Orders 0-5")
-    print("  modpattern foo.mod 0 0:15   Order 0, rows 0-15")
-}
-
-func parseRange(_ arg: String) -> (Int, Int?) {
-    let parts = arg.split(separator: ":", maxSplits: 1)
-    let start = Int(parts[0])!
-    let end = parts.count > 1 ? Int(parts[1])! : nil
-    return (start, end)
-}
 
 func noteDisplayName(_ noteValue: NoteValue) -> String {
     switch noteValue {
@@ -78,33 +62,16 @@ func formatNote(_ note: Note) -> String {
 }
 
 // Main
-let args = Array(CommandLine.arguments.dropFirst())
+let cli = CLIArgs.parse(usage:
+    "Usage: modpattern <file.mod> [--start-order N] [--end-order N] [--start-row N] [--end-row N]")
 
-if args.isEmpty {
-    printUsage()
-    exit(1)
-}
-
-let path = args[0]
-
-// Parse optional order range
-var orderStart = 0
-var orderEnd: Int? = nil
-if args.count >= 2 {
-    let (start, end) = parseRange(args[1])
-    orderStart = start
-    orderEnd = end ?? start
-}
-
-// Parse optional row range
-var rowStart = 0
-var rowEnd: Int? = nil
-if args.count >= 3 {
-    (rowStart, rowEnd) = parseRange(args[2])
-}
+let orderStart = cli.startOrder
+let orderEnd: Int? = cli.endOrder == Int.max ? nil : cli.endOrder
+let rowStart = cli.startRow
+let rowEnd: Int? = cli.endRow == Int.max ? nil : cli.endRow
 
 do {
-    let url = URL(fileURLWithPath: path)
+    let url = URL(fileURLWithPath: cli.inputPath)
     let data = try Data(contentsOf: url)
     let module = try MODLoader.load(data)
 

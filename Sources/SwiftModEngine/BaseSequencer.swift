@@ -26,6 +26,10 @@ public class BaseSequencer: @unchecked Sendable {
     private(set) public var samplesPerTick: Int
     private let sampleRate: Int
 
+    // Row change notification — fires on audio thread, suppressed during seek
+    public var onRow: ((Int, Int) -> Void)?
+    private var isSeeking: Bool = false
+
     // Sine table for vibrato/tremolo (64 entries, 0..255)
     private static let sineTable: [Int] = {
         var table = [Int](repeating: 0, count: 64)
@@ -38,11 +42,25 @@ public class BaseSequencer: @unchecked Sendable {
     public init(module: Module, sampleRate: Int = 44100) {
         self.module = module
         self.sampleRate = sampleRate
-        self.speed = module.initialSpeed
-        self.tempo = module.initialTempo
-        self.samplesPerTick = BaseSequencer.computeSamplesPerTick(tempo: module.initialTempo, sampleRate: sampleRate)
+        // Placeholders — reset() overwrites all of these immediately
+        self.speed = 0
+        self.tempo = 0
+        self.samplesPerTick = 0
+        self.channels = []
+        reset()
+    }
 
-        // Initialize channels with default panning
+    // Resets all mutable playback state to initial values and processes row 0.
+    private func reset() {
+        orderIndex = 0
+        rowIndex = 0
+        tick = 0
+        isFinished = false
+        patternDelayCount = 0
+        speed = module.initialSpeed
+        tempo = module.initialTempo
+        samplesPerTick = BaseSequencer.computeSamplesPerTick(tempo: module.initialTempo, sampleRate: sampleRate)
+
         var chans = [ChannelState]()
         for i in 0..<module.channelCount {
             var ch = ChannelState()
@@ -51,10 +69,22 @@ public class BaseSequencer: @unchecked Sendable {
             }
             chans.append(ch)
         }
-        self.channels = chans
+        channels = chans
 
-        // Process the first row immediately
         processRow()
+    }
+
+    /// Seek to the given order/row by replaying from the start (correctly rebuilds channel state).
+    /// Distinct from Bxx positionJump, which jumps orderIndex directly without resetting state.
+    public func seek(toOrder targetOrder: Int, row targetRow: Int = 0) {
+        isSeeking = true
+        reset()
+        while !isFinished {
+            if orderIndex > targetOrder { break }
+            if orderIndex == targetOrder && rowIndex >= targetRow { break }
+            advanceTick()
+        }
+        isSeeking = false
     }
 
     public static func computeSamplesPerTick(tempo: Int, sampleRate: Int) -> Int {
@@ -129,6 +159,8 @@ public class BaseSequencer: @unchecked Sendable {
             processNote(note, channel: ch)
             channels[ch].currentEffect = note.effect
         }
+
+        if !isSeeking { onRow?(orderIndex, rowIndex) }
     }
 
     func processNote(_ note: Note, channel ch: Int) {
@@ -157,7 +189,6 @@ public class BaseSequencer: @unchecked Sendable {
             } else {
                 channels[ch].period = period
                 channels[ch].targetPeriod = period
-                channels[ch].arpeggioBasePeriod = period
                 channels[ch].samplePosition = 0.0
                 channels[ch].playing = true
                 // Reset vibrato/tremolo position unless waveform bit 2 is set

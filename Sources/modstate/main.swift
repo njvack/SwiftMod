@@ -2,74 +2,22 @@ import Foundation
 import SwiftModCore
 import SwiftModFormats
 import SwiftModEngine
-
-func printUsage() {
-    fputs("""
-    Usage: modstate <input.mod> [--start-order N] [--start-row N] [--end-order N] [--end-row N]
-
-    Dumps sequencer channel state one line per tick to stdout.
-    All options require both tools to start from position 0 for accuracy;
-    --start-order/row fast-forwards silently before printing.
-
-    """, stderr)
-}
+import ModCLI
 
 // MARK: - Argument parsing
 
-var inputPath: String?
-var startOrder = 0
-var startRow = 0
-var endOrder = Int.max
-var endRow = Int.max
+let cli = CLIArgs.parse(usage: """
+    Usage: modstate <input.mod> [--start-order N] [--end-order N] [--start-row N] [--end-row N]
 
-var args = Array(CommandLine.arguments.dropFirst())
-var i = 0
-while i < args.count {
-    switch args[i] {
-    case "--start-order":
-        i += 1
-        guard i < args.count, let n = Int(args[i]), n >= 0 else {
-            fputs("Error: --start-order requires a non-negative integer\n", stderr)
-            exit(1)
-        }
-        startOrder = n
-    case "--start-row":
-        i += 1
-        guard i < args.count, let n = Int(args[i]), n >= 0 else {
-            fputs("Error: --start-row requires a non-negative integer\n", stderr)
-            exit(1)
-        }
-        startRow = n
-    case "--end-order":
-        i += 1
-        guard i < args.count, let n = Int(args[i]), n >= 0 else {
-            fputs("Error: --end-order requires a non-negative integer\n", stderr)
-            exit(1)
-        }
-        endOrder = n
-    case "--end-row":
-        i += 1
-        guard i < args.count, let n = Int(args[i]), n >= 0 else {
-            fputs("Error: --end-row requires a non-negative integer\n", stderr)
-            exit(1)
-        }
-        endRow = n
-    default:
-        if inputPath == nil {
-            inputPath = args[i]
-        } else {
-            fputs("Error: unexpected argument '\(args[i])'\n", stderr)
-            printUsage()
-            exit(1)
-        }
-    }
-    i += 1
-}
+    Dumps sequencer channel state one line per tick to stdout.
+    Playback always starts from order 0; --start-order/row fast-forwards silently.
+    """)
 
-guard let inputPath else {
-    printUsage()
-    exit(1)
-}
+let inputPath  = cli.inputPath
+let startOrder = cli.startOrder
+let endOrder   = cli.endOrder
+let startRow   = cli.startRow
+let endRow     = cli.endRow
 
 // MARK: - Load and run
 
