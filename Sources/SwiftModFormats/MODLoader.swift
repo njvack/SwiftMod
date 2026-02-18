@@ -105,7 +105,8 @@ public struct MODLoader: FormatLoader {
 
         // Read sample data and build instruments
         var instruments: [Instrument] = []
-        for header in sampleHeaders {
+        var warnings: [LoadWarning] = []
+        for (sampleIndex, header) in sampleHeaders.enumerated() {
             let sampleData: SampleData
             if header.length > 0 {
                 let availableBytes = min(header.length, reader.remaining)
@@ -119,13 +120,29 @@ public struct MODLoader: FormatLoader {
                 sampleData = .int8([])
             }
 
+            let sampleLength = sampleData.frameCount
             let loop: Loop?
             if header.loopLength > 2 {
-                loop = Loop(
-                    start: header.loopStart,
-                    length: header.loopLength,
-                    type: .forward
-                )
+                var loopStart = header.loopStart
+                var loopLength = header.loopLength
+                let needsClamp = loopStart + loopLength > sampleLength
+                if needsClamp {
+                    // Clamp loop to sample bounds
+                    loopStart = min(loopStart, max(sampleLength - 1, 0))
+                    loopLength = max(sampleLength - loopStart, 0)
+                    warnings.append(.loopExceedsSampleLength(
+                        sampleIndex: sampleIndex,
+                        originalStart: header.loopStart,
+                        originalLength: header.loopLength,
+                        clampedStart: loopStart,
+                        clampedLength: loopLength
+                    ))
+                }
+                if loopLength > 2 {
+                    loop = Loop(start: loopStart, length: loopLength, type: .forward)
+                } else {
+                    loop = nil
+                }
             } else {
                 loop = nil
             }
@@ -158,11 +175,12 @@ public struct MODLoader: FormatLoader {
         )
 
         // Default panning: hard left/right Amiga style (LRRL)
+        // Authentic Amiga hardware had no panning gradation — channels were wired hard left or right.
         var panning = [Int](repeating: 128, count: channelCount)
         for i in 0..<channelCount {
             switch i % 4 {
-            case 0, 3: panning[i] = 64   // left
-            case 1, 2: panning[i] = 192  // right
+            case 0, 3: panning[i] = 0    // hard left
+            case 1, 2: panning[i] = 255  // hard right
             default: break
             }
         }
@@ -175,7 +193,9 @@ public struct MODLoader: FormatLoader {
             restartPosition: restartPosition,
             patterns: patterns,
             instruments: instruments,
-            formatHints: hints
+            defaultPanning: panning,
+            formatHints: hints,
+            warnings: warnings
         )
     }
 

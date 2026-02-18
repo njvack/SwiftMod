@@ -12,6 +12,7 @@ public class ModuleRenderer: @unchecked Sendable {
     public var rowIndex: Int { sequencer.rowIndex }
     public var speed: Int { sequencer.speed }
     public var tempo: Int { sequencer.tempo }
+    public var samplesPerTick: Int { sequencer.samplesPerTick }
     public let module: Module
 
     public init(module: Module, sampleRate: Int = 44100) {

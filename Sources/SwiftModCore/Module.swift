@@ -13,6 +13,7 @@ public struct Module: Sendable {
     public let initialGlobalVolume: Int
     public let defaultPanning: [Int]
     public let formatHints: FormatHints
+    public let warnings: [LoadWarning]
 
     public init(
         title: String,
@@ -26,7 +27,8 @@ public struct Module: Sendable {
         initialTempo: Int = 125,
         initialGlobalVolume: Int = 64,
         defaultPanning: [Int] = [],
-        formatHints: FormatHints
+        formatHints: FormatHints,
+        warnings: [LoadWarning] = []
     ) {
         self.title = title
         self.formatDescription = formatDescription
@@ -40,5 +42,6 @@ public struct Module: Sendable {
         self.initialGlobalVolume = initialGlobalVolume
         self.defaultPanning = defaultPanning
         self.formatHints = formatHints
+        self.warnings = warnings
     }
 }

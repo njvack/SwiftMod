@@ -58,6 +58,14 @@ func showInfo(path: String) throws {
         print("  \(num). \(name.padding(toLength: 22, withPad: " ", startingAt: 0))  \(len.padding(toLength: 10, withPad: " ", startingAt: 0)) vol:\(vol)\(ftStr) \(loopStr)")
     }
     print()
+
+    if !module.warnings.isEmpty {
+        print("  Warnings:")
+        for warning in module.warnings {
+            print("    \(warning)")
+        }
+        print()
+    }
 }
 
 // Main

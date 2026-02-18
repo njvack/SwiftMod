@@ -15,6 +15,8 @@ let package = Package(
         .executable(name: "modlive", targets: ["modlive"]),
         .executable(name: "modpattern", targets: ["modpattern"]),
         .executable(name: "modbench", targets: ["modbench"]),
+        .executable(name: "modrender", targets: ["modrender"]),
+        .executable(name: "modstate", targets: ["modstate"]),
     ],
     targets: [
         .target(name: "SwiftModCore"),
@@ -26,6 +28,8 @@ let package = Package(
         .executableTarget(name: "modlive", dependencies: ["SwiftModCore", "SwiftModFormats", "SwiftModEngine"]),
         .executableTarget(name: "modpattern", dependencies: ["SwiftModCore", "SwiftModFormats"]),
         .executableTarget(name: "modbench", dependencies: ["SwiftModCore", "SwiftModFormats"]),
+        .executableTarget(name: "modrender", dependencies: ["SwiftModCore", "SwiftModFormats", "SwiftModEngine"]),
+        .executableTarget(name: "modstate", dependencies: ["SwiftModCore", "SwiftModFormats", "SwiftModEngine"]),
         .testTarget(name: "SwiftModCoreTests", dependencies: ["SwiftModCore"]),
         .testTarget(name: "SwiftModFormatsTests", dependencies: ["SwiftModFormats"]),
         .testTarget(name: "SwiftModEngineTests", dependencies: ["SwiftModEngine", "SwiftModCore"]),
