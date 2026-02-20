@@ -58,10 +58,10 @@ public let periodTable: [[Int]] = {
 }()
 
 /// Minimum period value (highest pitch). Derived from the extended table at finetune 0.
-public let minPeriod: Int = periodTable[0].last!
+public let minPeriod: Int = periodTable[0].last ?? 7
 
 /// Maximum period value (lowest pitch). Derived from the extended table at finetune 0.
-public let maxPeriod: Int = periodTable[0].first!
+public let maxPeriod: Int = periodTable[0].first ?? 856
 
 /// Convert a finetune nibble (0-15) from a MOD file to our period table index.
 /// MOD stores finetune as unsigned 0-15 where 0=0, 1=+1, ..., 7=+7, 8=-8, ..., 15=-1.

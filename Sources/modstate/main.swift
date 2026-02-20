@@ -62,7 +62,7 @@ func formatState() -> String {
 
 // MARK: - Main loop
 
-struct VisitedPosition: Hashable {
+struct VisitedPosition: Hashable, Sendable {
     let order: Int
     let row: Int
 }

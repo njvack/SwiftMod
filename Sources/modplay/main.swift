@@ -75,12 +75,14 @@ nonisolated func startAudio(renderer: ModuleRenderer, sampleRate: Double) throws
         let count = Int(frameCount)
         let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
 
+        guard let leftRaw = ablPointer[0].mData,
+              let rightRaw = ablPointer[1].mData else { return noErr }
         let left = UnsafeMutableBufferPointer(
-            start: ablPointer[0].mData!.assumingMemoryBound(to: Float.self),
+            start: leftRaw.assumingMemoryBound(to: Float.self),
             count: count
         )
         let right = UnsafeMutableBufferPointer(
-            start: ablPointer[1].mData!.assumingMemoryBound(to: Float.self),
+            start: rightRaw.assumingMemoryBound(to: Float.self),
             count: count
         )
         renderer.render(left: left, right: right, frameCount: count)

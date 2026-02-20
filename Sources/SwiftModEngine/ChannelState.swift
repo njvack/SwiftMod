@@ -57,7 +57,8 @@ public struct ChannelState: Sendable {
     public var vibratoSpeed: Int = 0
     public var vibratoDepth: Int = 0
     public var vibratoPosition: Int = 0    // oscillator phase (0-63)
-    public var vibratoWaveform: Int = 0    // 0=sine, 1=ramp, 2=square, 3=random; +4=no retrigger
+    public var vibratoWaveform: WaveformType = .sine
+    public var vibratoNoRetrigger: Bool = false  // if true, don't reset oscillator on note trigger
     public var vibratoOffset: Int = 0      // per-tick period adjustment, read by mixer
 
     // MARK: - Tremolo state (effect 7)
@@ -65,7 +66,8 @@ public struct ChannelState: Sendable {
     public var tremoloSpeed: Int = 0
     public var tremoloDepth: Int = 0
     public var tremoloPosition: Int = 0
-    public var tremoloWaveform: Int = 0
+    public var tremoloWaveform: WaveformType = .sine
+    public var tremoloNoRetrigger: Bool = false
     public var tremoloOffset: Int = 0      // per-tick volume adjustment, read by mixer
 
     // MARK: - Volume slide state (effects A, 5, 6)

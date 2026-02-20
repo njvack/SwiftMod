@@ -20,7 +20,7 @@ public struct Sample: Sendable {
     public let sustainLoop: Loop?
     public let finetune: Int
     public let relativeTone: Int
-    public let vibratoType: Int
+    public let vibratoType: WaveformType
     public let vibratoSpeed: Int
     public let vibratoDepth: Int
     public let vibratoSweep: Int
@@ -35,7 +35,7 @@ public struct Sample: Sendable {
         sustainLoop: Loop? = nil,
         finetune: Int = 0,
         relativeTone: Int = 0,
-        vibratoType: Int = 0,
+        vibratoType: WaveformType = .sine,
         vibratoSpeed: Int = 0,
         vibratoDepth: Int = 0,
         vibratoSweep: Int = 0
@@ -72,4 +72,13 @@ public enum LoopType: Sendable {
     case forward
     case pingPong
     case backward
+}
+
+/// Waveform shape for vibrato and tremolo oscillators.
+/// Corresponds to the low 2 bits of the E4x/E7x MOD effect parameter.
+public enum WaveformType: Int, Sendable {
+    case sine     = 0
+    case rampDown = 1
+    case square   = 2
+    case random   = 3
 }

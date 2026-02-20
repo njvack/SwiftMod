@@ -73,7 +73,11 @@ guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFra
 buffer.frameLength = AVAudioFrameCount(frameCount)
 
 // Convert Int8 samples to Float32 (-1.0 .. 1.0)
-let floatData = buffer.floatChannelData![0]
+guard let floatChannelData = buffer.floatChannelData else {
+    print("Failed to access float channel data")
+    exit(1)
+}
+let floatData = floatChannelData[0]
 switch sample.data {
 case .int8(let samples):
     for i in 0..<frameCount {

@@ -165,11 +165,13 @@ public class BaseSequencer: @unchecked Sendable {
 
     func processNote(_ note: Note, channel ch: Int) {
         // Check for note delay — suppress tick-0 trigger
-        if case .noteDelay(let delayTick) = note.effect, delayTick > 0 {
+        if let effect = note.effect,
+           case .noteDelay(let delayTick) = effect,
+           delayTick > 0 {
             // Store effect memory but don't trigger note or instrument
             channels[ch].delayedInstrument = note.instrument
             channels[ch].delayedPeriod = note.period
-            processEffect(note.effect!, channel: ch)
+            processEffect(effect, channel: ch)
             return
         }
 
@@ -192,10 +194,10 @@ public class BaseSequencer: @unchecked Sendable {
                 channels[ch].samplePosition = 0.0
                 channels[ch].playing = true
                 // Reset vibrato/tremolo position unless waveform bit 2 is set
-                if channels[ch].vibratoWaveform < 4 {
+                if !channels[ch].vibratoNoRetrigger {
                     channels[ch].vibratoPosition = 0
                 }
-                if channels[ch].tremoloWaveform < 4 {
+                if !channels[ch].tremoloNoRetrigger {
                     channels[ch].tremoloPosition = 0
                 }
             }
@@ -311,10 +313,12 @@ public class BaseSequencer: @unchecked Sendable {
             channels[ch].panning = value
 
         case .setVibratoWaveform(let waveform):
-            channels[ch].vibratoWaveform = waveform & 7
+            channels[ch].vibratoWaveform = WaveformType(rawValue: waveform & 3) ?? .sine
+            channels[ch].vibratoNoRetrigger = waveform & 4 != 0
 
         case .setTremoloWaveform(let waveform):
-            channels[ch].tremoloWaveform = waveform & 7
+            channels[ch].tremoloWaveform = WaveformType(rawValue: waveform & 3) ?? .sine
+            channels[ch].tremoloNoRetrigger = waveform & 4 != 0
 
         case .patternDelay(let rows):
             if patternDelayCount == 0 {
@@ -473,27 +477,24 @@ public class BaseSequencer: @unchecked Sendable {
 
     /// Compute a signed waveform value for vibrato/tremolo.
     /// Returns a value in roughly -depth..+depth range.
-    private func waveformValue(position: Int, waveform: Int, depth: Int) -> Int {
+    private func waveformValue(position: Int, waveform: WaveformType, depth: Int) -> Int {
         let pos = position & 63
-        let waveType = waveform & 3
 
         let amplitude: Int
-        switch waveType {
-        case 0: // Sine
+        switch waveform {
+        case .sine:
             amplitude = BaseSequencer.sineTable[pos]
-        case 1: // Ramp down (sawtooth)
+        case .rampDown:
             // 0 at pos 0, ramps to 255 at pos 31, then -256 at 32, ramps to -1 at 63
             if pos < 32 {
                 amplitude = pos * 8
             } else {
                 amplitude = (pos - 64) * 8
             }
-        case 2: // Square
+        case .square:
             amplitude = pos < 32 ? 255 : -255
-        case 3: // Random
+        case .random:
             amplitude = Int.random(in: -255...255)
-        default:
-            amplitude = 0
         }
 
         return (amplitude * depth) / 128

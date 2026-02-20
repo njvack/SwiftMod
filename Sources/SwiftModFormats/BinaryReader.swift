@@ -1,6 +1,6 @@
 import Foundation
 
-struct BinaryReader {
+struct BinaryReader: Sendable {
     let data: Data
     private(set) var offset: Int
 
@@ -46,11 +46,7 @@ struct BinaryReader {
 
     mutating func readUInt8x4() throws -> (UInt8, UInt8, UInt8, UInt8) {
         guard offset + 4 <= data.count else { throw BinaryReaderError.endOfData }
-        let result = data.withUnsafeBytes { buffer in
-            let p = buffer.baseAddress!.advanced(by: offset)
-                .assumingMemoryBound(to: UInt8.self)
-            return (p[0], p[1], p[2], p[3])
-        }
+        let result = (data[offset], data[offset + 1], data[offset + 2], data[offset + 3])
         offset += 4
         return result
     }
@@ -65,18 +61,12 @@ struct BinaryReader {
 
     mutating func readInt8Array(_ count: Int) throws -> [Int8] {
         guard offset + count <= data.count else { throw BinaryReaderError.endOfData }
-        let result = data.withUnsafeBytes { buffer in
-            Array(UnsafeBufferPointer(
-                start: buffer.baseAddress!.advanced(by: offset)
-                    .assumingMemoryBound(to: Int8.self),
-                count: count
-            ))
-        }
+        let result = (offset..<offset + count).map { Int8(bitPattern: data[$0]) }
         offset += count
         return result
     }
 }
 
-enum BinaryReaderError: Error {
+enum BinaryReaderError: Error, Sendable {
     case endOfData
 }

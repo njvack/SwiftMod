@@ -68,7 +68,7 @@ var leftBuf = [Float](repeating: 0, count: chunkSize)
 var rightBuf = [Float](repeating: 0, count: chunkSize)
 var pcmData = Data()
 
-struct VisitedPosition: Hashable {
+struct VisitedPosition: Hashable, Sendable {
     let order: Int
     let row: Int
 }
