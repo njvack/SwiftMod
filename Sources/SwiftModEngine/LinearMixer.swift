@@ -38,11 +38,19 @@ public struct LinearMixer: Mixer {
         channels: inout [ChannelState],
         frameCount: Int,
         left: UnsafeMutableBufferPointer<Float>,
-        right: UnsafeMutableBufferPointer<Float>
+        right: UnsafeMutableBufferPointer<Float>,
+        channelCapture: [UnsafeMutableBufferPointer<Float>]? = nil
     ) {
-        // Zero the buffers
+        // Zero the output buffers
         memset(left.baseAddress!, 0, frameCount * MemoryLayout<Float>.size)
         memset(right.baseAddress!, 0, frameCount * MemoryLayout<Float>.size)
+
+        // Zero capture buffers so non-playing channels produce silence
+        if let capture = channelCapture {
+            for buf in capture {
+                memset(buf.baseAddress!, 0, frameCount * MemoryLayout<Float>.size)
+            }
+        }
 
         for ch in 0..<channels.count {
             guard channels[ch].playing else { continue }
@@ -79,7 +87,8 @@ public struct LinearMixer: Mixer {
                 channel: &channels[ch],
                 frameCount: frameCount,
                 left: left,
-                right: right
+                right: right,
+                monoCapture: channelCapture.map { $0[ch] }
             )
         }
     }
@@ -93,7 +102,8 @@ public struct LinearMixer: Mixer {
         channel: inout ChannelState,
         frameCount: Int,
         left: UnsafeMutableBufferPointer<Float>,
-        right: UnsafeMutableBufferPointer<Float>
+        right: UnsafeMutableBufferPointer<Float>,
+        monoCapture: UnsafeMutableBufferPointer<Float>? = nil
     ) {
         let sampleLength = sampleData.count
         let loopStart = loop?.start ?? 0
@@ -133,6 +143,7 @@ public struct LinearMixer: Mixer {
 
             left[frame] += sampleValue * leftGain
             right[frame] += sampleValue * rightGain
+            if let cap = monoCapture { cap[frame] = sampleValue }
 
             pos += sampleSpeed
         }

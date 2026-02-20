@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftMod",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [
         .library(name: "SwiftModCore", targets: ["SwiftModCore"]),
         .library(name: "SwiftModFormats", targets: ["SwiftModFormats"]),

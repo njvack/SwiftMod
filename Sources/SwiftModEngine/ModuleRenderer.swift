@@ -6,6 +6,15 @@ public class ModuleRenderer: @unchecked Sendable {
     private var mixer: LinearMixer
     private var sampleCounter: Int = 0
 
+    /// Attach a `VisualizationBuffers` instance to receive per-channel and
+    /// stereo audio data on every render call. Set before playback begins.
+    public var vizBuffers: VisualizationBuffers?
+
+    // Scratch buffers for per-channel mono capture (audio thread only).
+    // Sized to handle the largest possible render slice; allocated once.
+    private static let scratchSize = 4096
+    private var channelScratch: [UnsafeMutableBufferPointer<Float>]
+
     public var isFinished: Bool { sequencer.isFinished }
 
     public var orderIndex: Int { sequencer.orderIndex }
@@ -30,6 +39,7 @@ public class ModuleRenderer: @unchecked Sendable {
         self.sequencer = BaseSequencer(module: module, sampleRate: sampleRate)
         self.mixer = LinearMixer(sampleRate: sampleRate)
         self.mixer.prepare(module: module)
+        self.channelScratch = Self.allocateScratch(count: module.channelCount)
     }
 
     public init(sequencer: BaseSequencer, module: Module, sampleRate: Int = 44100) {
@@ -37,6 +47,19 @@ public class ModuleRenderer: @unchecked Sendable {
         self.sequencer = sequencer
         self.mixer = LinearMixer(sampleRate: sampleRate)
         self.mixer.prepare(module: module)
+        self.channelScratch = Self.allocateScratch(count: module.channelCount)
+    }
+
+    deinit {
+        for buf in channelScratch { buf.deallocate() }
+    }
+
+    private static func allocateScratch(count: Int) -> [UnsafeMutableBufferPointer<Float>] {
+        (0..<count).map { _ in
+            let buf = UnsafeMutableBufferPointer<Float>.allocate(capacity: scratchSize)
+            buf.initialize(repeating: 0.0)
+            return buf
+        }
     }
 
     /// Render stereo audio into separate left/right buffers.
@@ -68,12 +91,28 @@ public class ModuleRenderer: @unchecked Sendable {
                     start: right.baseAddress! + framesRendered,
                     count: framesToRender
                 )
+
+                let captureSlices: [UnsafeMutableBufferPointer<Float>]? = vizBuffers.map { _ in
+                    channelScratch.map { UnsafeMutableBufferPointer(start: $0.baseAddress, count: framesToRender) }
+                }
+
                 mixer.render(
                     channels: &sequencer.channels,
                     frameCount: framesToRender,
                     left: leftSlice,
-                    right: rightSlice
+                    right: rightSlice,
+                    channelCapture: captureSlices
                 )
+
+                if let viz = vizBuffers, let captures = captureSlices {
+                    for ch in 0..<captures.count {
+                        viz.appendChannel(UnsafeBufferPointer(captures[ch]), index: ch)
+                    }
+                    viz.appendStereo(
+                        left: UnsafeBufferPointer(leftSlice),
+                        right: UnsafeBufferPointer(rightSlice)
+                    )
+                }
 
                 framesRendered += framesToRender
                 sampleCounter += framesToRender
