@@ -2,11 +2,10 @@ import Foundation
 
 struct BinaryReader: Sendable {
     let data: Data
-    private(set) var offset: Int
+    private(set) var offset: Int = 0
 
     init(data: Data) {
         self.data = data
-        self.offset = 0
     }
 
     var remaining: Int { data.count - offset }

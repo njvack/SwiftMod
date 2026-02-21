@@ -10,11 +10,11 @@ public class BaseSequencer: @unchecked Sendable {
     public var tick: Int = 0
 
     // Timing
-    public var speed: Int
-    private(set) public var tempo: Int
+    public var speed: Int = 0
+    private(set) public var tempo: Int = 0
 
     // Channel state (public set: mixer writes back sample positions)
-    public var channels: [ChannelState]
+    public var channels: [ChannelState] = []
 
     // Playback status
     private(set) public var isFinished: Bool = false
@@ -23,7 +23,7 @@ public class BaseSequencer: @unchecked Sendable {
     private var patternDelayCount: Int = 0
 
     // Samples per tick (cached, recomputed when tempo changes)
-    private(set) public var samplesPerTick: Int
+    private(set) public var samplesPerTick: Int = 0
     private let sampleRate: Int
 
     // Row change notification — fires on audio thread, suppressed during seek
@@ -42,11 +42,6 @@ public class BaseSequencer: @unchecked Sendable {
     public init(module: Module, sampleRate: Int = 44100) {
         self.module = module
         self.sampleRate = sampleRate
-        // Placeholders — reset() overwrites all of these immediately
-        self.speed = 0
-        self.tempo = 0
-        self.samplesPerTick = 0
-        self.channels = []
         reset()
     }
 
