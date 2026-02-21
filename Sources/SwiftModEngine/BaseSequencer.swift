@@ -255,7 +255,7 @@ public class BaseSequencer: @unchecked Sendable {
                 channels[ch].sampleOffsetMemory = byteOffset
             }
             let effectiveOffset = offset != 0 ? byteOffset : channels[ch].sampleOffsetMemory
-            channels[ch].samplePosition = Double(effectiveOffset)
+            channels[ch].samplePosition = Float(effectiveOffset)
 
         case .slideUp(let speed):
             if speed != 0 { channels[ch].slideUpSpeed = speed }

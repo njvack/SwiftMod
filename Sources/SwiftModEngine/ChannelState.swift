@@ -26,10 +26,9 @@ public struct ChannelState: Sendable {
 
     // MARK: - Playback position
 
-    /// Fractional index into the sample data. This is a Double because samples
-    /// play back at non-integer rates (e.g. advancing 0.188 samples per output
-    /// frame at middle C). The fractional part drives linear interpolation.
-    public var samplePosition: Double = 0.0
+    /// Fractional index into the sample data. Advances by sampleSpeed each output
+    /// frame; the fractional part drives linear interpolation between adjacent samples.
+    public var samplePosition: Float = 0.0
     public var playing: Bool = false
 
     // MARK: - Pitch

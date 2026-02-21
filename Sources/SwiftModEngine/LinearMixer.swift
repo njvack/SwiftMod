@@ -5,7 +5,7 @@ public struct LinearMixer: Mixer {
     public let sampleRate: Int
 
     // PAL Amiga clock (period * 2 = full clock cycles)
-    private static let paulaClock: Double = 7_093_789.2
+    private static let paulaClock: Float = 7_093_789.2
 
     private struct PreparedSample {
         let data: [Float]
@@ -63,20 +63,18 @@ public struct LinearMixer: Mixer {
             guard sampleIdx < instSamples.count else { continue }
             let prepared = instSamples[sampleIdx]
 
-            let sampleLength = prepared.data.count
-            guard sampleLength > 0 else { continue }
+            guard !prepared.data.isEmpty else { continue }
 
             // Compute sample speed: apply vibrato offset to period
             let effectivePeriod = max(channels[ch].period + channels[ch].vibratoOffset, minPeriod)
-            let frequency = LinearMixer.paulaClock / (Double(effectivePeriod) * 2.0)
-            let sampleSpeed = frequency / Double(sampleRate)
+            let sampleSpeed = LinearMixer.paulaClock / (Float(effectivePeriod) * 2.0 * Float(sampleRate))
 
-            // Apply tremolo offset to volume
+            // Apply tremolo offset to volume; compute per-channel gains
             let effectiveVolume = max(0, min(64, channels[ch].volume + channels[ch].tremoloOffset))
-            let volume = Double(effectiveVolume) / 64.0
-            let panning = Double(channels[ch].panning) / 255.0
-            let leftGain = Float(volume * (1.0 - panning) * 2.0)
-            let rightGain = Float(volume * panning * 2.0)
+            let volume  = Float(effectiveVolume) / 64.0
+            let panning = Float(channels[ch].panning) / 255.0
+            let leftGain  = volume * (1.0 - panning) * 2.0
+            let rightGain = volume * panning * 2.0
 
             renderChannel(
                 sampleData: prepared.data,
@@ -96,7 +94,7 @@ public struct LinearMixer: Mixer {
     private func renderChannel(
         sampleData: [Float],
         loop: Loop?,
-        sampleSpeed: Double,
+        sampleSpeed: Float,
         leftGain: Float,
         rightGain: Float,
         channel: inout ChannelState,
@@ -106,27 +104,33 @@ public struct LinearMixer: Mixer {
         monoCapture: UnsafeMutableBufferPointer<Float>? = nil
     ) {
         let sampleLength = sampleData.count
-        let loopStart = loop?.start ?? 0
-        let loopEnd = loop.map { $0.start + $0.length } ?? sampleLength
+        let loopStart  = loop?.start ?? 0
+        let loopEnd    = loop.map { $0.start + $0.length } ?? sampleLength
         let loopLength = loop?.length ?? 0
-        let hasLoop = loop != nil
+        let hasLoop    = loop != nil
+
+        // Pre-convert loop bounds to Float so the inner loop is cast-free.
+        let fLoopStart  = Float(loopStart)
+        let fLoopEnd    = Float(loopEnd)
+        let fLoopLength = Float(loopLength)
+
         var pos = channel.samplePosition
 
         for frame in 0..<frameCount {
             // Handle loop wrapping / end of sample
             if hasLoop {
-                if pos >= Double(loopEnd) {
-                    pos -= Double(loopLength) * floor((pos - Double(loopStart)) / Double(loopLength))
-                    if pos >= Double(loopEnd) { pos = Double(loopStart) }
+                if pos >= fLoopEnd {
+                    pos -= fLoopLength * floor((pos - fLoopStart) / fLoopLength)
+                    if pos >= fLoopEnd { pos = fLoopStart }
                 }
-            } else if pos >= Double(sampleLength) {
+            } else if pos >= Float(sampleLength) {
                 channel.playing = false
                 break
             }
 
             // Linear interpolation
             let index = Int(pos)
-            let frac = Float(pos - Double(index))
+            let frac  = pos - Float(index)
 
             let s0 = sampleData[index]
             let s1: Float
@@ -141,7 +145,7 @@ public struct LinearMixer: Mixer {
 
             let sampleValue = s0 + (s1 - s0) * frac
 
-            left[frame] += sampleValue * leftGain
+            left[frame]  += sampleValue * leftGain
             right[frame] += sampleValue * rightGain
             if let cap = monoCapture { cap[frame] = sampleValue }
 
@@ -151,8 +155,8 @@ public struct LinearMixer: Mixer {
         channel.samplePosition = pos
 
         // Final position wrap for looping samples
-        if hasLoop && channel.samplePosition >= Double(loopEnd) {
-            channel.samplePosition -= Double(loopLength) * floor((channel.samplePosition - Double(loopStart)) / Double(loopLength))
+        if hasLoop && pos >= fLoopEnd {
+            channel.samplePosition -= fLoopLength * floor((pos - fLoopStart) / fLoopLength)
         }
     }
 }
